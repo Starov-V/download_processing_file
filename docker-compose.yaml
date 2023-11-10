@@ -1,0 +1,41 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: my_password
+      POSTGRES_DB: my_db
+    volumes: 
+      - psql:/var/lib/postgresql/data
+
+  redis:
+    image: redis
+    restart: always
+    ports:
+      - "6379:6379"
+  
+  web:
+    restart: always
+    build:
+      context: ./download_processing_file
+    ports:
+      - "8000:8000"
+    command: [ "python3", "manage.py", "runserver", "0.0.0.0:8000"]
+    depends_on:
+      - db
+  
+  worker:
+    restart: always
+    build:
+      context: ./download_processing_file
+    command: celery -A download_processing_file worker
+    depends_on:
+      - redis
+      - web
+      - db
+volumes:
+  psql:
+
+  
